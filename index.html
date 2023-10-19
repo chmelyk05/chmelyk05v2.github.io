@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Client</title>
+</head>
+<body>
+    <input type="text" id="message" placeholder="Enter a message">
+    <button onclick="sendMessage()">Send</button><br>
+
+    <div id="messages"></div>
+
+    <script>
+        const Wsocket = "ws://localhost:8080";
+
+        let banned = localStorage.getItem("banned");
+        if (banned) {
+            document.getElementById("messages").innerHTML = "<p style='color: red'>You are banned.</p>";
+            document.getElementById("message").disabled = true;
+            document.getElementById("send").disabled = true;
+        } else {
+            let websocket = new WebSocket(Wsocket);
+            websocket.onopen = function (event) {
+                console.log("Connection established.");
+                const messagesDiv = document.getElementById("messages");
+                messagesDiv.insertAdjacentHTML("afterbegin", "<p style='color: green'>Connected to the server</p>");
+            };
+
+            websocket.onmessage = function (event) {
+                const messagesDiv = document.getElementById("messages");
+                messagesDiv.insertAdjacentHTML("afterbegin", `<p>${event.data}</p>`);
+            };
+
+            websocket.onclose = function (event) {
+                if (event.wasClean) {
+                    console.log(`Connection closed with code: ${event.code} and reason: ${event.reason}`);
+                } else {
+                    console.error("Connection unexpectedly closed.");
+                    alert("Disconnected. Try reconnecting.");
+                }
+            };
+
+            websocket.onerror = function (error) {
+                console.error("Connection error:", error);
+            };
+
+            function sendMessage() {
+                if(!banned){
+                    const messageInput = document.getElementById("message");
+                    const message = messageInput.value;
+                    websocket.send(message);
+
+                    const messagesDiv = document.getElementById("messages");
+                    messagesDiv.insertAdjacentHTML("afterbegin", `<p><strong>You:</strong> ${message}</p>`);
+
+                    messageInput.value = "";
+                }
+            }
+        }
+    </script>
+</body>
+</html>
